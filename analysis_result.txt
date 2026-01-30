@@ -1,0 +1,160 @@
+Sheet names: ['List', '1. Monthly Progress ', '2. Overall Project Progress', '3-2 Fabrication time Schedu', '3-2 sheet', 'Inspection time Schedule', '3. Detail Works Schedule', '4. Fabrication Status', '4. Submittal Document List', '5. Submittal Document List', '6. Shipping Plan', '7. Change Order', '8. ISSUE']
+
+--- Sheet: List ---
+Columns:
+['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7']
+First 5 rows:
+          Unnamed: 0  Unnamed: 1  ... Unnamed: 6  Unnamed: 7
+0  Table of Contents         NaN  ...        NaN         NaN
+1                NaN         NaN  ...        NaN         NaN
+2                NaN         NaN  ...        NaN       PAGE 
+3                  1         NaN  ...        NaN           2
+4                  2         NaN  ...        NaN           3
+
+[5 rows x 8 columns]
+
+--- Sheet: 1. Monthly Progress  ---
+Columns:
+['1. Monthly Progress', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', datetime.datetime(2025, 8, 30, 0, 0)]
+First 5 rows:
+  1. Monthly Progress          Unnamed: 1  ... Unnamed: 5 2025-08-30 00:00:00
+0                 NaN                 NaN  ...        NaN                 NaN
+1                 NO.         DESCRIPTION  ...        NaN              REMARK
+2                 NaN                 NaN  ...       ACC.                 NaN
+3                   1            Catalyst  ...   0.037636                 NaN
+4                   2  Catalyst Structure  ...   0.047046                 NaN
+
+[5 rows x 7 columns]
+
+--- Sheet: 2. Overall Project Progress ---
+Columns:
+['Unnamed: 0', '2. Overall Progress Status', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', datetime.datetime(2025, 8, 30, 0, 0), 'Unnamed: 13']
+First 5 rows:
+    Unnamed: 0 2. Overall Progress Status  ... 2025-08-30 00:00:00 Unnamed: 13
+0  DESCRIPTION                        NaN  ...            PROGRESS      REMARK
+1          NaN                        NaN  ...                 NaN         NaN
+2          NaN                        NaN  ...                 NaN         NaN
+3          NaN                        NaN  ...                 NaN         NaN
+4           1.                   Catalyst  ...            0.037636         NaN
+
+[5 rows x 14 columns]
+
+--- Sheet: 3-2 Fabrication time Schedu ---
+Columns:
+['3.2 Fabrication Time Schedule', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39', datetime.datetime(2015, 8, 28, 0, 0), 'Unnamed: 41', 'Unnamed: 42', 'Unnamed: 43', 'Unnamed: 44']
+First 5 rows:
+  3.2 Fabrication Time Schedule Unnamed: 1  ...          Unnamed: 43 Unnamed: 44
+0                           No.       ITEM  ...                  NaN      REMARK
+1                           NaN  Main Item  ...                  NaN         NaN
+2                           NaN        NaN  ...                  NaN         NaN
+3                           NaN        NaN  ...               Finish         NaN
+4                             1        SCR  ...  2015-10-15 00:00:00         NaN
+
+[5 rows x 45 columns]
+
+--- Sheet: 3-2 sheet ---
+Columns:
+['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39', 'Unnamed: 40', 'Unnamed: 41', 'Unnamed: 42', 'Unnamed: 43', 'Unnamed: 44', 'Unnamed: 45', 'Unnamed: 46', 'Unnamed: 47', 'Unnamed: 48', 'Unnamed: 49', 'Unnamed: 50', 'Unnamed: 51', 'Unnamed: 52', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124']
+First 5 rows:
+  Unnamed: 0 Unnamed: 1 Unnamed: 2  ...  Unnamed: 122  Unnamed: 123  Unnamed: 124
+0        NaN        NaN        NaN  ...           NaN           NaN           NaN
+1        NaN        NaN       2015  ...           NaN           NaN           NaN
+2        NaN        NaN      APRIL  ...           NaN           NaN           NaN
+3        NaN        NaN         15  ...          13.0          14.0          15.0
+4       PLAN        SUM        NaN  ...           NaN           NaN           NaN
+
+[5 rows x 125 columns]
+
+--- Sheet: Inspection time Schedule ---
+Columns:
+['Inspection Time Schedule', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', datetime.datetime(2015, 6, 26, 0, 0), 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39']
+First 5 rows:
+  Inspection Time Schedule  ... Unnamed: 39
+0                      No.  ...      REMARK
+1                      NaN  ...         NaN
+2                      NaN  ...         NaN
+3                      NaN  ...         NaN
+4                        1  ...         NaN
+
+[5 rows x 40 columns]
+
+--- Sheet: 3. Detail Works Schedule ---
+Columns:
+['  DOC. NO.', 'Unnamed: 1', '-', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'WORKS SCHEDULE', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38']
+First 5 rows:
+     DOC. NO.  Unnamed: 1              -  ...  Unnamed: 36  Unnamed: 37  Unnamed: 38
+0    PJT.NAME         NaN       WAKAYAMA  ...          NaN          NaN          NaN
+1    CUSTOMER         NaN            BHI  ...          NaN          NaN          NaN
+2    FACILITY         NaN     SCR SYSTEM  ...          NaN          NaN          NaN
+3        DATE         NaN  2025. 08. .30  ...  DESCRIPTION          NaN       REMARK
+
+[4 rows x 39 columns]
+
+--- Sheet: 4. Fabrication Status ---
+Columns:
+['4. Fabrication Status', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', datetime.datetime(2025, 8, 30, 0, 0)]
+First 5 rows:
+  4. Fabrication Status          Unnamed: 1  ... Unnamed: 12 2025-08-30 00:00:00
+0                   S/N         Description  ...    Location              Remark
+1                   NaN                 NaN  ...         NaN                 NaN
+2                     1            Catalyst  ...       오스트리아                 NaN
+3                   NaN                 NaN  ...         NaN                 NaN
+4                     2  Catalyst Structure  ...       충남 당진                납품완료
+
+[5 rows x 14 columns]
+
+--- Sheet: 4. Submittal Document List ---
+Columns:
+['4. Submittal Document List', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39', 'Unnamed: 40', 'Unnamed: 41', 'Unnamed: 42', 'Unnamed: 43', 'Unnamed: 44', 'Unnamed: 45', 'Unnamed: 46', 'Unnamed: 47', 'Unnamed: 48', 'Unnamed: 49', 'Unnamed: 50', 'Unnamed: 51']
+First 5 rows:
+    4. Submittal Document List Unnamed: 1  ... Unnamed: 50         Unnamed: 51
+0  PROJECT : GS Dangjin 4 CCPP        NaN  ...         NaN                 NaN
+1           ABBREVIATIONS  :          NaN  ...         NaN                 NaN
+2                          NaN        NaN  ...         NaN                 NaN
+3                          NaN        NaN  ...         NaN  As of : 2015-08-28
+4                          No.       Code  ...         NaN             Remarks
+
+[5 rows x 52 columns]
+
+--- Sheet: 5. Submittal Document List ---
+Columns:
+['WAKAYAMA Document Control List', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25', 'Unnamed: 26', 'Unnamed: 27', 'Unnamed: 28', 'Unnamed: 29', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Unnamed: 33', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39', 'Unnamed: 40', 'Unnamed: 41', 'Unnamed: 42', 'Unnamed: 43', 'Unnamed: 44', 'Unnamed: 45', 'Unnamed: 46', 'Unnamed: 47', 'Unnamed: 48', 'Unnamed: 49', 'Unnamed: 50', 'Unnamed: 51', 'Unnamed: 52', 'Unnamed: 53']
+First 5 rows:
+  WAKAYAMA Document Control List  Unnamed: 1  ... Unnamed: 52  Unnamed: 53
+0                            NaN         NaN  ...         NaN          NaN
+1  Package Name  : WAKAYAMA HRSG         NaN  ...         NaN          NaN
+2  Vendor Name    : BHI. CO.,LTD         NaN  ...         NaN          NaN
+3         DOCUMENT NUMBER (CODE)         NaN  ...         NaN          NaN
+4                         PJT No         NaN  ...         NaN       Return
+
+[5 rows x 54 columns]
+
+--- Sheet: 6. Shipping Plan ---
+Columns:
+['6. Shipping Plan', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', datetime.datetime(2025, 8, 30, 0, 0), 'Unnamed: 14']
+First 5 rows:
+  6. Shipping Plan     Unnamed: 1  ...  2025-08-30 00:00:00 Unnamed: 14
+0              No.      Item Name  ...                  NaN      Remark
+1              NaN            NaN  ...                    3         NaN
+2              NaN            NaN  ...  2022-11-28 00:00:00         NaN
+3              NaN  (To be later)  ...                  NaN         NaN
+
+[4 rows x 15 columns]
+
+--- Sheet: 7. Change Order ---
+Columns:
+['7. Change Order Status', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', datetime.datetime(2025, 8, 30, 0, 0)]
+First 5 rows:
+  7. Change Order Status Unnamed: 1  ...    Unnamed: 4 2025-08-30 00:00:00
+0                   Date   Rev. No.  ...  Total amount              Remark
+
+[1 rows x 6 columns]
+
+--- Sheet: 8. ISSUE ---
+Columns:
+['8. Issue', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', datetime.datetime(2025, 8, 30, 0, 0)]
+First 5 rows:
+       8. Issue  Unnamed: 1  ... Unnamed: 4 2025-08-30 00:00:00
+0  P.O Line NO.         NaN  ...        NaN                 NaN
+
+[1 rows x 6 columns]

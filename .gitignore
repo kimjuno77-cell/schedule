@@ -1,0 +1,12 @@
+__pycache__/
+build/
+dist/
+*.pyc
+*.spec
+*.exe
+# Generated files
+*.html
+temp_export.xlsx
+*_Schedule_Calculated.xlsx
+# Large files or secrets
+.env
