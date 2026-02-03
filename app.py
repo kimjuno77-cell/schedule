@@ -522,9 +522,10 @@ try:
     # --- Chart Generation Functions ---
     def create_gantt_chart(df, phases, title):
         # Prepare data for Plotly Gantt
-        gantt_data = []
-        
-        # Color mapping (Pastel Tones)
+        plan_data = [] # For bar chart (px.timeline)
+        actual_traces = {} # For scatter plot (go.Scatter)
+
+        # Color mapping (Pastel Tones for Plan, somewhat stronger for Actual lines if needed, but using same for consistency)
         phase_colors = {
             '구매 (Procurement)': '#A0C4FF',       # Pastel Blue
             '설계 (Design)': '#9BF6FF',            # Pastel Cyan
@@ -533,66 +534,112 @@ try:
             '납품 (Delivery)': '#CAFFBF'           # Pastel Green
         }
         
+        # We need to initialize lists for actual traces per phase to group them in the legend
+        # Structure: {PhaseName: {'x': [], 'y': [], 'color': Hex}}
+        for phase_name in phase_colors:
+            actual_traces[phase_name] = {'x': [], 'y': [], 'color': phase_colors[phase_name]}
+
         for index, row in df.iterrows():
             item_name = row['항목 (Item)']
             if pd.isna(item_name) or str(item_name).strip() == "": continue
             
             for phase_name, p_start, p_end, a_start, a_end in phases:
-                # Plan
+                # 1. Plan Data (Bar Chart)
                 if pd.notnull(row[p_start]) and pd.notnull(row[p_end]):
-                    gantt_data.append(dict(
-                        Item=item_name, Y_Label=f"{item_name} (Plan)", Phase=phase_name, 
-                        Start=row[p_start], Finish=row[p_end], Type="Plan"
+                    plan_data.append(dict(
+                        Item=item_name, 
+                        # Y_Label is just Item name so they align
+                        Y_Label=item_name,  
+                        Phase=phase_name, 
+                        Start=row[p_start], 
+                        Finish=row[p_end],
+                        Type="Plan"
                     ))
-                # Actual
-                # Actual
+                
+                # 2. Actual Data (Scatter Plot: Line + Dot)
                 if pd.notnull(row[a_start]):
                     start_date = row[a_start]
                     # If end date is missing, assume it's ongoing (ends today)
                     finish_date = row[a_end] if pd.notnull(row[a_end]) else pd.Timestamp.now().date()
                     
-                    gantt_data.append(dict(
-                        Item=item_name, Y_Label=f"{item_name} (Actual)", Phase=phase_name, 
-                        Start=start_date, Finish=finish_date, Type="Actual"
-                    ))
+                    # Add to traces. We separate segments by None to break the line between different items if we were plotting a single trace,
+                    # but here we want distinct lines per item. 
+                    # Strategy: Add [Start, Finish, None] to x and [Item, Item, None] to y.
+                    
+                    if phase_name in actual_traces:
+                        actual_traces[phase_name]['x'].extend([start_date, finish_date, None])
+                        actual_traces[phase_name]['y'].extend([item_name, item_name, None])
+
+        if not plan_data and all(not t['x'] for t in actual_traces.values()):
+            return None
         
-        if not gantt_data: return None
-        
-        g_df = pd.DataFrame(gantt_data)
-        g_df['Start'] = pd.to_datetime(g_df['Start'])
-        g_df['Finish'] = pd.to_datetime(g_df['Finish'])
-        g_df.sort_values(by=['Item', 'Type'], ascending=[True, False], inplace=True) 
-        
-        fig = px.timeline(
-            g_df, x_start="Start", x_end="Finish", y="Y_Label", color="Phase", 
-            color_discrete_map=phase_colors, # Apply custom colors
-            opacity=0.9, hover_data=["Item", "Phase", "Start", "Finish"], title=title
+        # --- Create Base Figure (Plan Bars) ---
+        if plan_data:
+            g_df = pd.DataFrame(plan_data)
+            g_df['Start'] = pd.to_datetime(g_df['Start'])
+            g_df['Finish'] = pd.to_datetime(g_df['Finish'])
+            g_df.sort_values(by=['Item'], ascending=[True], inplace=True) # Sort mainly by Item
+            
+            fig = px.timeline(
+                g_df, x_start="Start", x_end="Finish", y="Y_Label", color="Phase", 
+                color_discrete_map=phase_colors,
+                opacity=0.6, # Reduced opacity for Plan background
+                hover_data=["Item", "Phase", "Start", "Finish"], 
+                title=title
+            )
+        else:
+            # Fallback if no plan data but we have actuals (unlikely, but safe)
+            fig = go.Figure()
+            fig.update_layout(title=title)
+
+        # --- Overlay Actuals (Dots + Lines) ---
+        for phase_name, trace_data in actual_traces.items():
+            if trace_data['x']: # Only add if data exists
+                fig.add_trace(go.Scatter(
+                    x=trace_data['x'],
+                    y=trace_data['y'],
+                    mode='lines+markers',
+                    name=f"{phase_name} (Actual)",
+                    marker=dict(symbol='circle', size=8, color=trace_data['color']), # Dot
+                    line=dict(color=trace_data['color'], width=3), # Line connecting dots
+                    legendgroup=phase_name, # Group with phase if desired, or separate. Let's keep separate for clarity.
+                    showlegend=True
+                ))
+
+        # --- Layout Adjustments ---
+        fig.update_yaxes(
+            autorange="reversed", # Top to bottom
+            title_text="항목 (Item)",
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='#888888',
+            zeroline=True,
+            zerolinewidth=2,
+            zerolinecolor='#888888'
         )
-        fig.update_layout(barmode='stack', height=max(600, len(df)*40), template='plotly_white')
         
         # Add 'Today' Line
         today_ts = pd.Timestamp.now().timestamp() * 1000
-        fig.add_vline(x=today_ts, line_width=1, line_dash="dot", line_color="blue", annotation_text="Today")
+        fig.add_vline(x=today_ts, line_width=2, line_dash="solid", line_color="red", annotation_text="Today")
         
         fig.update_xaxes(
             type='date', 
             showgrid=True, 
             gridwidth=0.5, 
             gridcolor='#E0E0E0',
-            dtick=864000000.0, # 10 Days in milliseconds
-            tickformat="%m-%d" # Format to avoid overcrowding
+            dtick=864000000.0, # 10 Days
+            tickformat="%m-%d"
         )
-        fig.update_yaxes(
-            autorange="reversed", 
-            title_text="항목 (Item)",
-            showgrid=True,
-            gridwidth=1,          # Thicker line
-            gridcolor='#888888',  # Darker grey for clear separation
-            zeroline=True,
-            zerolinewidth=2,
-            zerolinecolor='#888888'
+        
+        # Force layout height
+        item_count = len(df)
+        fig.update_layout(
+            height=max(600, item_count * 40), 
+            template='plotly_white',
+            barmode='overlay', # Overlay bars if multiple match (though we shouldn't have overlapping Plans usually)
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        fig.update_traces(marker_line_color='black', marker_line_width=0.5)
+        
         return fig
 
     def create_plan_vs_actual_gantt(df, phases):
