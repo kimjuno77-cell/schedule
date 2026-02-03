@@ -562,37 +562,20 @@ try:
                     item_has_plan = True
             
             # 2. Find Latest Actual Date for this Item
-            # We look at ALL phases for this item and find the max date
-            latest_date = None
+            # We look at ALL phases for this item and find the max entered date
+            valid_dates = []
             
             for phase_name, p_start, p_end, a_start, a_end in phases:
                 if pd.notnull(row[a_start]):
-                    start_d = pd.to_datetime(row[a_start]).date()
-                    # Determine effective end date for this phase
-                    if pd.notnull(row[a_end]):
-                         finish_d = pd.to_datetime(row[a_end]).date()
-                    else:
-                         # Phase started but not finished -> Ongoing -> Today
-                         finish_d = pd.Timestamp.now().date()
-                    
-                    # Update latest_date
-                    if latest_date is None or finish_d > latest_date:
-                        latest_date = finish_d
+                    valid_dates.append(pd.to_datetime(row[a_start]).date())
+                if pd.notnull(row[a_end]):
+                    valid_dates.append(pd.to_datetime(row[a_end]).date())
             
-            if latest_date:
-                line_dates.append(latest_date)
+            if valid_dates:
+                line_dates.append(max(valid_dates))
                 line_items.append(item_name)
             else:
                 # Item has no actual progress yet.
-                # To maintain the line continuity, we should arguably plot it at the Start of Project? 
-                # Or skip? 
-                # If we skip, the line breaks. User said "connect item by item".
-                # If no progress, maybe it should be at the far left?
-                # Let's check if there is a plan start?
-                # For now, let's Append None to break the line, OR (better) don't append, 
-                # which connects the previous item directly to the next existing item.
-                # User's intent: "Line connecting dots". If a dot doesn't exist, we can't connect to it.
-                # skipping acts like a bridge.
                 pass
 
         if not plan_data and not line_dates:
