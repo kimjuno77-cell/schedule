@@ -523,9 +523,8 @@ try:
     def create_gantt_chart(df, phases, title):
         # Prepare data for Plotly Gantt
         plan_data = [] # For bar chart (px.timeline)
-        actual_traces = {} # For scatter plot (go.Scatter)
-
-        # Color mapping (Pastel Tones for Plan, somewhat stronger for Actual lines if needed, but using same for consistency)
+        
+        # Color mapping (Pastel Tones for Plan)
         phase_colors = {
             '구매 (Procurement)': '#A0C4FF',       # Pastel Blue
             '설계 (Design)': '#9BF6FF',            # Pastel Cyan
@@ -534,88 +533,120 @@ try:
             '납품 (Delivery)': '#CAFFBF'           # Pastel Green
         }
         
-        # We need to initialize lists for actual traces per phase to group them in the legend
-        # Structure: {PhaseName: {'x': [], 'y': [], 'color': Hex}}
-        for phase_name in phase_colors:
-            actual_traces[phase_name] = {'x': [], 'y': [], 'color': phase_colors[phase_name]}
-
+        # Lists for the Vertical Progress Line (Actual)
+        line_dates = []
+        line_items = []
+        
+        # We need to iterate in the order they appear in the DataFrame to maintain vertical connection
+        # Ensure df is sorted if needed, but usually it's in logic order. 
+        # If we sort for Plotly Y-axis (which is reversed usually), we should match that order.
+        # Plotly draws Y axis from bottom up by default, but we use 'reversed' in update_yaxes.
+        # So top row in DF = Top row in Chart.
+        
         for index, row in df.iterrows():
             item_name = row['항목 (Item)']
             if pd.isna(item_name) or str(item_name).strip() == "": continue
             
+            # 1. Collect Plan Data
+            item_has_plan = False
             for phase_name, p_start, p_end, a_start, a_end in phases:
-                # 1. Plan Data (Bar Chart)
                 if pd.notnull(row[p_start]) and pd.notnull(row[p_end]):
                     plan_data.append(dict(
                         Item=item_name, 
-                        # Y_Label is just Item name so they align
                         Y_Label=item_name,  
                         Phase=phase_name, 
                         Start=row[p_start], 
                         Finish=row[p_end],
                         Type="Plan"
                     ))
-                
-                # 2. Actual Data (Scatter Plot: Line + Dot)
+                    item_has_plan = True
+            
+            # 2. Find Latest Actual Date for this Item
+            # We look at ALL phases for this item and find the max date
+            latest_date = None
+            
+            for phase_name, p_start, p_end, a_start, a_end in phases:
                 if pd.notnull(row[a_start]):
-                    start_date = row[a_start]
-                    # If end date is missing, assume it's ongoing (ends today)
-                    finish_date = row[a_end] if pd.notnull(row[a_end]) else pd.Timestamp.now().date()
+                    start_d = pd.to_datetime(row[a_start]).date()
+                    # Determine effective end date for this phase
+                    if pd.notnull(row[a_end]):
+                         finish_d = pd.to_datetime(row[a_end]).date()
+                    else:
+                         # Phase started but not finished -> Ongoing -> Today
+                         finish_d = pd.Timestamp.now().date()
                     
-                    # Add to traces. We separate segments by None to break the line between different items if we were plotting a single trace,
-                    # but here we want distinct lines per item. 
-                    # Strategy: Add [Start, Finish, None] to x and [Item, Item, None] to y.
-                    
-                    if phase_name in actual_traces:
-                        actual_traces[phase_name]['x'].extend([start_date, finish_date, None])
-                        actual_traces[phase_name]['y'].extend([item_name, item_name, None])
+                    # Update latest_date
+                    if latest_date is None or finish_d > latest_date:
+                        latest_date = finish_d
+            
+            if latest_date:
+                line_dates.append(latest_date)
+                line_items.append(item_name)
+            else:
+                # Item has no actual progress yet.
+                # To maintain the line continuity, we should arguably plot it at the Start of Project? 
+                # Or skip? 
+                # If we skip, the line breaks. User said "connect item by item".
+                # If no progress, maybe it should be at the far left?
+                # Let's check if there is a plan start?
+                # For now, let's Append None to break the line, OR (better) don't append, 
+                # which connects the previous item directly to the next existing item.
+                # User's intent: "Line connecting dots". If a dot doesn't exist, we can't connect to it.
+                # skipping acts like a bridge.
+                pass
 
-        if not plan_data and all(not t['x'] for t in actual_traces.values()):
+        if not plan_data and not line_dates:
             return None
         
-        # --- Create Base Figure (Plan Bars) ---
+        # --- Create Figure ---
+        fig = go.Figure()
+        
+        # 1. Add Plan Bars
         if plan_data:
             g_df = pd.DataFrame(plan_data)
             g_df['Start'] = pd.to_datetime(g_df['Start'])
             g_df['Finish'] = pd.to_datetime(g_df['Finish'])
-            g_df.sort_values(by=['Item'], ascending=[True], inplace=True) # Sort mainly by Item
             
+            # Important: We want the Y-axis order to follow df order.
+            # Plotly maps categorical Y based on appearance or sort.
+            # We can force the category order.
+            
+            # Instead of separate px.timeline, let's add traces to go.Figure manually or use px and add scatter.
+            # Using px.timeline is easier for the bars.
             fig = px.timeline(
                 g_df, x_start="Start", x_end="Finish", y="Y_Label", color="Phase", 
                 color_discrete_map=phase_colors,
-                opacity=0.6, # Reduced opacity for Plan background
+                opacity=0.5, # Background opacity
                 hover_data=["Item", "Phase", "Start", "Finish"], 
                 title=title
             )
         else:
-            # Fallback if no plan data but we have actuals (unlikely, but safe)
             fig = go.Figure()
             fig.update_layout(title=title)
 
-        # --- Overlay Actuals (Dots + Lines) ---
-        for phase_name, trace_data in actual_traces.items():
-            if trace_data['x']: # Only add if data exists
-                fig.add_trace(go.Scatter(
-                    x=trace_data['x'],
-                    y=trace_data['y'],
-                    mode='lines+markers',
-                    name=f"{phase_name} (Actual)",
-                    marker=dict(symbol='circle', size=8, color=trace_data['color']), # Dot
-                    line=dict(color=trace_data['color'], width=3), # Line connecting dots
-                    legendgroup=phase_name, # Group with phase if desired, or separate. Let's keep separate for clarity.
-                    showlegend=True
-                ))
+        # 2. Add Vertical Progress Line
+        if line_dates:
+            fig.add_trace(go.Scatter(
+                x=line_dates,
+                y=line_items,
+                mode='lines+markers',
+                name='Actual Progress (Original)',
+                marker=dict(symbol='circle', size=10, color='#FF5733'), # Red-Orange dot
+                line=dict(color='#FF5733', width=3), # Connection line
+                hoverinfo='x+y+text',
+                hovertext=[f"Latest: {d}" for d in line_dates]
+            ))
 
         # --- Layout Adjustments ---
         fig.update_yaxes(
-            autorange="reversed", # Top to bottom
+            autorange="reversed", # Start from top
             title_text="항목 (Item)",
+            type='category', # Ensure categorical
+            categoryorder='array', # Force order
+            categoryarray=df['항목 (Item)'].tolist(), # Use exact DF order
             showgrid=True,
             gridwidth=1,
             gridcolor='#888888',
-            zeroline=True,
-            zerolinewidth=2,
-            zerolinecolor='#888888'
         )
         
         # Add 'Today' Line
@@ -631,12 +662,10 @@ try:
             tickformat="%m-%d"
         )
         
-        # Force layout height
-        item_count = len(df)
         fig.update_layout(
-            height=max(600, item_count * 40), 
+            height=max(600, len(df) * 40), 
             template='plotly_white',
-            barmode='overlay', # Overlay bars if multiple match (though we shouldn't have overlapping Plans usually)
+            barmode='overlay',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         
