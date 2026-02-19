@@ -832,39 +832,36 @@ try:
     # 엑셀 다운로드 (자동 계산된 데이터 포함)
     st.markdown("---")
     
-    # Use a temporary file on disk to ensure stability
+    # 엑셀 다운로드 (In-Memory)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        edited_df.to_excel(writer, index=False, sheet_name="Schedule")
+        
+        # Metadata
+        meta_data = {
+            'ProjectName': [project_name],
+            'StartDate': [project_start_date],
+            'DeliveryDate': [contract_delivery_date]
+        }
+        pd.DataFrame(meta_data).to_excel(writer, index=False, sheet_name="ProjectInfo")
+    
+    output.seek(0)
+    
+    server_filename = f"{project_name}_Schedule_Calculated.xlsx"
+    import re
+    safe_server_name = re.sub(r'[\\/*?:"<>|]', "", server_filename).strip()
+
+    st.download_button(
+        label="💾 엑셀 스케줄 다운로드 (Download Excel)",
+        data=output,
+        file_name=safe_server_name,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    
+    # temp file for stability (optional, can keep or remove, keeping for now)
     temp_filename = "temp_export.xlsx"
     with pd.ExcelWriter(temp_filename, engine='openpyxl') as writer:
         edited_df.to_excel(writer, index=False, sheet_name="Schedule")
-    
-    if st.button("💾 바탕화면에 저장 (Save to Desktop)"):
-        try:
-            # Construct Desktop Path
-            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-            
-            # Server save can use the full Korean name as it's local filesystem
-            server_filename = f"{project_name}_Schedule_Calculated.xlsx"
-            # Sanitize mostly for filesystem safety
-            import re
-            safe_server_name = re.sub(r'[\\/*?:"<>|]', "", server_filename).strip()
-            
-            save_path = os.path.join(desktop_path, safe_server_name)
-            
-            with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
-                # 1. Save Schedule Data
-                edited_df.to_excel(writer, index=False, sheet_name="Schedule")
-                
-                # 2. Save Project Metadata
-                meta_data = {
-                    'ProjectName': [project_name],
-                    'StartDate': [project_start_date],
-                    'DeliveryDate': [contract_delivery_date]
-                }
-                pd.DataFrame(meta_data).to_excel(writer, index=False, sheet_name="ProjectInfo")
-                
-            st.success(f"파일이 바탕화면에 저장되었습니다: {os.path.abspath(save_path)}")
-        except Exception as e:
-            st.error(f"저장 실패: {e}")
 
     # ... [Existing Chart Code] ...
     
@@ -881,169 +878,176 @@ try:
         except Exception:
             return ""
 
-    if st.button("💾 종합 보고서 바탕화면에 저장 (Save Report to Desktop)"):
-        # 1. Prepare Assets
-        
-        # 2. Capture Charts (Plotly to HTML div)
-        
-        # Chart 1: Gantt Chart
-        fig_gantt = create_gantt_chart(edited_df, phases_info, "") # Clean title for report
-        if fig_gantt:
-            # Add Delivery Line
-            delivery_ts = pd.to_datetime(contract_delivery_date).timestamp() * 1000
-            fig_gantt.add_vline(x=delivery_ts, line_width=2, line_dash="dash", line_color="red", annotation_text="계약 납품일")
-            gantt_html = fig_gantt.to_html(full_html=False, include_plotlyjs='cdn')
-        else:
-            gantt_html = "<p>일정 데이터 부족</p>"
+    # Session State for Report
+    if 'report_html' not in st.session_state:
+        st.session_state.report_html = None
+    if 'report_name' not in st.session_state:
+        st.session_state.report_name = None
 
-        # 3. Data Table HTML (Existing Function)
-        data_table_html = create_data_table_html(edited_df, phases_info)
-        
-        # 4. Prepare New Sections
-        
-        # A. Overall Metrics HTML
-        diff_val = overall_actual - overall_plan
-        diff_color = "red" if diff_val < 0 else "green"
-        diff_sign = "" if diff_val < 0 else "+"
-        
-        metrics_html = f"""
-        <div class="metrics-container" style="display: flex; gap: 20px; justify-content: space-between; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; color: #555;">전체 계획 공정률</h3>
-                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0056b3;">{overall_plan:.2f}%</p>
-            </div>
-            <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; color: #555;">전체 실적 공정률</h3>
-                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0056b3;">{overall_actual:.2f}% <span style="font-size: 16px; color: {diff_color};">({diff_sign}{diff_val:.2f}%)</span></p>
-            </div>
-            <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; color: #555;">종합 상태</h3>
-                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #333;">{status_msg}</p>
-            </div>
-        </div>
-        """
-        
-        # B. Detailed Progress Review Table HTML
-        review_cols = ['항목 (Item)', '가중치 (Weight)', '전월 실적 (Actual Prev)', '금월 실적 (Actual Curr)', '월간 진도 (Monthly Progress)']
-        final_review_cols = [c for c in review_cols if c in edited_df.columns]
-        
-        # Create a copy for formatting
-        review_df = edited_df[final_review_cols].copy()
-        for col in final_review_cols:
-            if col in ['가중치 (Weight)', '전월 실적 (Actual Prev)', '금월 실적 (Actual Curr)', '월간 진도 (Monthly Progress)']:
-                 review_df[col] = pd.to_numeric(review_df[col], errors='coerce').fillna(0).apply(lambda x: f"{x:.2f}%")
-        
-        review_table_html = review_df.to_html(index=False, classes='data-table', border=0)
+    if st.button("🔄 종합 보고서 생성 (Generate Report)"):
+        with st.spinner("보고서를 생성 중입니다... (Generating Report...)"):
+            # 1. Prepare Assets
+            
+            # 2. Capture Charts (Plotly to HTML div)
+            
+            # Chart 1: Gantt Chart
+            fig_gantt = create_gantt_chart(edited_df, phases_info, "") # Clean title for report
+            if fig_gantt:
+                # Add Delivery Line
+                delivery_ts = pd.to_datetime(contract_delivery_date).timestamp() * 1000
+                fig_gantt.add_vline(x=delivery_ts, line_width=2, line_dash="dash", line_color="red", annotation_text="계약 납품일")
+                gantt_html = fig_gantt.to_html(full_html=False, include_plotlyjs='cdn')
+            else:
+                gantt_html = "<p>일정 데이터 부족</p>"
 
-        # 5. HTML Template
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>{project_name} - Monthly Progress Report</title>
-            <style>
-                body {{ font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 40px; }}
-                .page-break {{ page-break-before: always; }}
-                .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0056b3; padding-bottom: 20px; margin-bottom: 30px; }}
-                .logo {{ font-size: 24px; font-weight: bold; color: #0056b3; }}
-                .title-box {{ text-align: right; }}
-                .title {{ font-size: 28px; font-weight: bold; margin: 0; color: #2c3e50; }}
-                .subtitle {{ font-size: 14px; color: #7f8c8d; margin-top: 5px; }}
-                
-                .section {{ margin-bottom: 50px; }}
-                .section-title {{ font-size: 20px; font-weight: bold; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }}
-                
-                table.data-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }}
-                table.data-table th {{ background-color: #0056b3; color: white; padding: 8px; text-align: center; border: 1px solid #ddd; }}
-                table.data-table td {{ padding: 6px; border: 1px solid #ddd; text-align: center; }}
-                table.data-table tr:nth-child(even) {{ background-color: #f9f9f9; }}
-                table.data-table tr:hover {{ background-color: #f1f1f1; }}
-                td {{ padding: 10px; border-bottom: 1px solid #ddd; }}
-                tr:nth-child(even) {{ background-color: #f2f2f2; }}
-                
-                @media print {{
-                    .page-break {{ break-before: page; }}
-                    body {{ padding: 0; }}
-                }}
-            </style>
-        </head>
-        <body>
-            <!-- Header -->
-            <div class="header">
-                <div class="logo">EMKO</div>
-                <div class="title-box">
-                    <div class="title">Monthly Progress Report</div>
-                    <div class="subtitle">Project: {project_name}</div>
-                    <div class="subtitle">Date: {pd.Timestamp.now().strftime('%Y-%m-%d')}</div>
+            # 3. Data Table HTML (Existing Function)
+            data_table_html = create_data_table_html(edited_df, phases_info)
+            
+            # 4. Prepare New Sections
+            
+            # A. Overall Metrics HTML
+            diff_val = overall_actual - overall_plan
+            diff_color = "red" if diff_val < 0 else "green"
+            diff_sign = "" if diff_val < 0 else "+"
+            
+            metrics_html = f"""
+            <div class="metrics-container" style="display: flex; gap: 20px; justify-content: space-between; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top: 0; color: #555;">전체 계획 공정률</h3>
+                    <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0056b3;">{overall_plan:.2f}%</p>
+                </div>
+                <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top: 0; color: #555;">전체 실적 공정률</h3>
+                    <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0056b3;">{overall_actual:.2f}% <span style="font-size: 16px; color: {diff_color};">({diff_sign}{diff_val:.2f}%)</span></p>
+                </div>
+                <div class="metric-card" style="flex: 1; text-align: center; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top: 0; color: #555;">종합 상태</h3>
+                    <p style="font-size: 24px; font-weight: bold; margin: 0; color: #333;">{status_msg}</p>
                 </div>
             </div>
+            """
+            
+            # B. Detailed Progress Review Table HTML
+            review_cols = ['항목 (Item)', '가중치 (Weight)', '전월 실적 (Actual Prev)', '금월 실적 (Actual Curr)', '월간 진도 (Monthly Progress)']
+            final_review_cols = [c for c in review_cols if c in edited_df.columns]
+            
+            # Create a copy for formatting
+            review_df = edited_df[final_review_cols].copy()
+            for col in final_review_cols:
+                if col in ['가중치 (Weight)', '전월 실적 (Actual Prev)', '금월 실적 (Actual Curr)', '월간 진도 (Monthly Progress)']:
+                     review_df[col] = pd.to_numeric(review_df[col], errors='coerce').fillna(0).apply(lambda x: f"{x:.2f}%")
+            
+            review_table_html = review_df.to_html(index=False, classes='data-table', border=0)
 
-            <!-- 1. Overall Metrics (New) -->
-            <div class="section">
-                <div class="section-title">📊 종합 공정 현황 (Overall Status)</div>
-                {metrics_html}
-            </div>
-
-            <!-- Issues & Delays -->
-            <div class="section">
-                 <div class="section-title">🚨 주요 이슈 및 지연 알림 (Major Issues)</div>
-                 <ul>
-                 {''.join([f'<li style="color:red; font-weight:bold;">{alert}</li>' for alert in delay_alerts]) if delay_alerts else '<li>No major issues found. (정상)</li>'}
-                 </ul>
-            </div>
-
-            <div class="page-break"></div>
-
-            <!-- Gantt Chart -->
-            <div class="section">
-                <div class="section-title">📅 통합 공정 스케줄 (Project Schedule)</div>
-                <div style="width:100%; overflow-x: auto;">
-                    {gantt_html}
+            # 5. HTML Template
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>{project_name} - Monthly Progress Report</title>
+                <style>
+                    body {{ font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 40px; }}
+                    .page-break {{ page-break-before: always; }}
+                    .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0056b3; padding-bottom: 20px; margin-bottom: 30px; }}
+                    .logo {{ font-size: 24px; font-weight: bold; color: #0056b3; }}
+                    .title-box {{ text-align: right; }}
+                    .title {{ font-size: 28px; font-weight: bold; margin: 0; color: #2c3e50; }}
+                    .subtitle {{ font-size: 14px; color: #7f8c8d; margin-top: 5px; }}
+                    
+                    .section {{ margin-bottom: 50px; }}
+                    .section-title {{ font-size: 20px; font-weight: bold; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }}
+                    
+                    table.data-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }}
+                    table.data-table th {{ background-color: #0056b3; color: white; padding: 8px; text-align: center; border: 1px solid #ddd; }}
+                    table.data-table td {{ padding: 6px; border: 1px solid #ddd; text-align: center; }}
+                    table.data-table tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                    table.data-table tr:hover {{ background-color: #f1f1f1; }}
+                    td {{ padding: 10px; border-bottom: 1px solid #ddd; }}
+                    tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                    
+                    @media print {{
+                        .page-break {{ break-before: page; }}
+                        body {{ padding: 0; }}
+                    }}
+                </style>
+            </head>
+            <body>
+                <!-- Header -->
+                <div class="header">
+                    <div class="logo">EMKO</div>
+                    <div class="title-box">
+                        <div class="title">Monthly Progress Report</div>
+                        <div class="subtitle">Project: {project_name}</div>
+                        <div class="subtitle">Date: {pd.Timestamp.now().strftime('%Y-%m-%d')}</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="page-break"></div>
-            
-            <!-- 2. Detailed Progress Review (New) -->
-            <div class="section">
-                <div class="section-title">📋 상세 진도율 검토 (Detailed Progress Review)</div>
-                {review_table_html}
-            </div>
-            
-            <div class="page-break"></div>
+                <!-- 1. Overall Metrics (New) -->
+                <div class="section">
+                    <div class="section-title">📊 종합 공정 현황 (Overall Status)</div>
+                    {metrics_html}
+                </div>
 
-            <!-- Detailed Data (Full Table) -->
-            <div class="section">
-                <div class="section-title">📑 전체 데이터 (Full Data)</div>
-                {data_table_html}
-            </div>
+                <!-- Issues & Delays -->
+                <div class="section">
+                     <div class="section-title">🚨 주요 이슈 및 지연 알림 (Major Issues)</div>
+                     <ul>
+                     {''.join([f'<li style="color:red; font-weight:bold;">{alert}</li>' for alert in delay_alerts]) if delay_alerts else '<li>No major issues found. (정상)</li>'}
+                     </ul>
+                </div>
+
+                <div class="page-break"></div>
+
+                <!-- Gantt Chart -->
+                <div class="section">
+                    <div class="section-title">📅 통합 공정 스케줄 (Project Schedule)</div>
+                    <div style="width:100%; overflow-x: auto;">
+                        {gantt_html}
+                    </div>
+                </div>
+
+                <div class="page-break"></div>
+                
+                <!-- 2. Detailed Progress Review (New) -->
+                <div class="section">
+                    <div class="section-title">📋 상세 진도율 검토 (Detailed Progress Review)</div>
+                    {review_table_html}
+                </div>
+                
+                <div class="page-break"></div>
+
+                <!-- Detailed Data (Full Table) -->
+                <div class="section">
+                    <div class="section-title">📑 전체 데이터 (Full Data)</div>
+                    {data_table_html}
+                </div>
+                
+                <div class="footer">
+                    &copy; {date.today().year} EMKO. All rights reserved. Generated by Gantt Chat Project.
+                </div>
+            </body>
+            </html>
+            """
             
-            <div class="footer">
-                &copy; {date.today().year} EMKO. All rights reserved. Generated by Gantt Chat Project.
-            </div>
-        </body>
-        </html>
-        """
-        
-        # 4. Save to Server (Desktop)
-        report_filename = f"{project_name}_Progress_Report.html"
-        # Sanitize filename
-        safe_report_name = re.sub(r'[\\/*?:"<>|]', "", report_filename).strip()
-        
-        # Construct Desktop Path
-        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-        save_path = os.path.join(desktop_path, safe_report_name)
-        
-        try:
-            with open(save_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
+            # Save to Session State
+            st.session_state.report_html = html_content
             
-            st.success(f"보고서가 바탕화면에 저장되었습니다: {os.path.abspath(save_path)}")
-        except Exception as save_err:
-            st.error(f"보고서 저장 실패: {save_err}")
+            report_filename = f"{project_name}_Progress_Report.html"
+            safe_report_name = re.sub(r'[\\/*?:"<>|]', "", report_filename).strip()
+            st.session_state.report_name = safe_report_name
+            
+            st.success("보고서가 생성되었습니다! 아래 다운로드 버튼을 눌러주세요.")
+
+    # Show Download Button if Report is Ready
+    if st.session_state.report_html:
+        st.download_button(
+            label="💾 종합 보고서 다운로드 (Download Report)",
+            data=st.session_state.report_html,
+            file_name=st.session_state.report_name,
+            mime="text/html"
+        )
 
 except Exception as e:
     st.error(f"오류 발생: {e}")
     st.text(traceback.format_exc())
-
