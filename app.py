@@ -561,21 +561,34 @@ try:
                     ))
                     item_has_plan = True
             
-            # 2. Find Latest Actual Date for this Item
-            # We look at ALL phases for this item and find the max entered date
-            valid_dates = []
+            # 2. Find Latest Status Date (Earned Schedule) for this Item
+            # Strategy: If Actual End exists -> Plot at Plan End.
+            #           If Actual Start exists -> Plot at Plan Start.
+            #           This visualizes "How much planned work has been achieved".
+            #           Right of Today = Ahead (Completed future work).
+            #           Left of Today  = Delay (Only completed past work).
+            
+            valid_plan_dates = []
             
             for phase_name, p_start, p_end, a_start, a_end in phases:
-                if pd.notnull(row[a_start]):
-                    valid_dates.append(pd.to_datetime(row[a_start]).date())
+                # Check Actual End first (Completion)
                 if pd.notnull(row[a_end]):
-                    valid_dates.append(pd.to_datetime(row[a_end]).date())
+                    if pd.notnull(row[p_end]):
+                        valid_plan_dates.append(pd.to_datetime(row[p_end]).date())
+                    # If Plan End missing, maybe fallback to Actual End? 
+                    # User requested specific "Plan Date" mapping. If missing, we can't map. 
+                    # But bars exist, so Plan usually exists.
+                    
+                # Check Actual Start (In Progress)
+                elif pd.notnull(row[a_start]):
+                    if pd.notnull(row[p_start]):
+                        valid_plan_dates.append(pd.to_datetime(row[p_start]).date())
             
-            if valid_dates:
-                line_dates.append(max(valid_dates))
+            if valid_plan_dates:
+                # Take the latest Plan Date achieved
+                line_dates.append(max(valid_plan_dates))
                 line_items.append(item_name)
             else:
-                # Item has no actual progress yet.
                 pass
 
         if not plan_data and not line_dates:
