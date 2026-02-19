@@ -837,15 +837,19 @@ try:
     with pd.ExcelWriter(temp_filename, engine='openpyxl') as writer:
         edited_df.to_excel(writer, index=False, sheet_name="Schedule")
     
-    if st.button("💾 프로젝트 폴더에 저장 (Project Folder Save)"):
+    if st.button("💾 바탕화면에 저장 (Save to Desktop)"):
         try:
+            # Construct Desktop Path
+            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            
             # Server save can use the full Korean name as it's local filesystem
             server_filename = f"{project_name}_Schedule_Calculated.xlsx"
             # Sanitize mostly for filesystem safety
             import re
             safe_server_name = re.sub(r'[\\/*?:"<>|]', "", server_filename).strip()
             
-            save_path = safe_server_name
+            save_path = os.path.join(desktop_path, safe_server_name)
+            
             with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
                 # 1. Save Schedule Data
                 edited_df.to_excel(writer, index=False, sheet_name="Schedule")
@@ -858,7 +862,7 @@ try:
                 }
                 pd.DataFrame(meta_data).to_excel(writer, index=False, sheet_name="ProjectInfo")
                 
-            st.success(f"파일이 프로젝트 폴더에 저장되었습니다: {os.path.abspath(save_path)}")
+            st.success(f"파일이 바탕화면에 저장되었습니다: {os.path.abspath(save_path)}")
         except Exception as e:
             st.error(f"저장 실패: {e}")
 
@@ -877,7 +881,7 @@ try:
         except Exception:
             return ""
 
-    if st.button("💾 종합 보고서 생성 및 폴더 저장 (Generate & Save Report)"):
+    if st.button("💾 종합 보고서 바탕화면에 저장 (Save Report to Desktop)"):
         # 1. Prepare Assets
         
         # 2. Capture Charts (Plotly to HTML div)
@@ -1022,17 +1026,20 @@ try:
         </html>
         """
         
-        # 4. Save to Server (Project Folder)
+        # 4. Save to Server (Desktop)
         report_filename = f"{project_name}_Progress_Report.html"
         # Sanitize filename
         safe_report_name = re.sub(r'[\\/*?:"<>|]', "", report_filename).strip()
         
+        # Construct Desktop Path
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        save_path = os.path.join(desktop_path, safe_report_name)
+        
         try:
-            with open(safe_report_name, "w", encoding="utf-8") as f:
+            with open(save_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
             
-            st.success(f"보고서가 프로젝트 폴더에 저장되었습니다: {os.path.abspath(safe_report_name)}")
-            st.info("💡 팁: 저장된 HTML 파일을 열어 최상단 '인쇄' 기능을 이용해 PDF로 저장할 수 있습니다.")
+            st.success(f"보고서가 바탕화면에 저장되었습니다: {os.path.abspath(save_path)}")
         except Exception as save_err:
             st.error(f"보고서 저장 실패: {save_err}")
 
