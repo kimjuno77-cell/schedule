@@ -123,11 +123,11 @@ if st.session_state.data is None:
         }
         # 날짜 컬럼 추가
         cols = [
-            '설계 계획 시작', '설계 계획 종료', '설계 실적 시작', '설계 실적 종료',
-            '구매 계획 시작', '구매 계획 종료', '구매 실적 시작', '구매 실적 종료',
-            '제작 계획 시작', '제작 계획 종료', '제작 실적 시작', '제작 실적 종료',
-            '검사 계획 시작', '검사 계획 종료', '검사 실적 시작', '검사 실적 종료',
-            '납품 계획 시작', '납품 계획 종료', '납품 실적 시작', '납품 실적 종료'
+            '설계 계획 시작', '설계 계획 종료', '설계 실적 시작', '설계 진행률 (%)', '설계 실적 종료',
+            '구매 계획 시작', '구매 계획 종료', '구매 실적 시작', '구매 진행률 (%)', '구매 실적 종료',
+            '제작 계획 시작', '제작 계획 종료', '제작 실적 시작', '제작 진행률 (%)', '제작 실적 종료',
+            '검사 계획 시작', '검사 계획 종료', '검사 실적 시작', '검사 진행률 (%)', '검사 실적 종료',
+            '납품 계획 시작', '납품 계획 종료', '납품 실적 시작', '납품 진행률 (%)', '납품 실적 종료'
         ]
         for c in cols:
             data[c] = [None] * len(default_items)
@@ -211,21 +211,23 @@ df = st.session_state.data
 
 # 단계 정의 (순서 변경: 구매 -> 설계)
 phases_info = [
-    ('구매 (Procurement)', '구매 계획 시작', '구매 계획 종료', '구매 실적 시작', '구매 실적 종료'),
-    ('설계 (Design)', '설계 계획 시작', '설계 계획 종료', '설계 실적 시작', '설계 실적 종료'),
-    ('제작 (Manufacturing)', '제작 계획 시작', '제작 계획 종료', '제작 실적 시작', '제작 실적 종료'),
-    ('검사 (Inspection)', '검사 계획 시작', '검사 계획 종료', '검사 실적 시작', '검사 실적 종료'),
-    ('납품 (Delivery)', '납품 계획 시작', '납품 계획 종료', '납품 실적 시작', '납품 실적 종료'),
+    ('구매 (Procurement)', '구매 계획 시작', '구매 계획 종료', '구매 실적 시작', '구매 진행률 (%)', '구매 실적 종료'),
+    ('설계 (Design)', '설계 계획 시작', '설계 계획 종료', '설계 실적 시작', '설계 진행률 (%)', '설계 실적 종료'),
+    ('제작 (Manufacturing)', '제작 계획 시작', '제작 계획 종료', '제작 실적 시작', '제작 진행률 (%)', '제작 실적 종료'),
+    ('검사 (Inspection)', '검사 계획 시작', '검사 계획 종료', '검사 실적 시작', '검사 진행률 (%)', '검사 실적 종료'),
+    ('납품 (Delivery)', '납품 계획 시작', '납품 계획 종료', '납품 실적 시작', '납품 진행률 (%)', '납품 실적 종료'),
 ]
 all_date_cols = []
+all_prog_cols = []
 for p in phases_info:
-    all_date_cols.extend([p[1], p[2], p[3], p[4]])
+    all_date_cols.extend([p[1], p[2], p[3], p[5]])
+    all_prog_cols.append(p[4])
 
 # 날짜 형변환 및 컬럼 순서 재정렬 (구매 -> 설계 -> 제작...)
 # phases_info의 순서대로 날짜 컬럼을 정렬한다.
 ordered_columns = ['항목 (Item)', '금액 (Amount)', '제작 기간 (Weeks)', '가중치 (Weight)', '전월 계획 (Plan Prev)', '전월 실적 (Actual Prev)', '금월 계획 (Plan Curr)', '금월 실적 (Actual Curr)']
 for p in phases_info:
-    ordered_columns.extend([p[1], p[2], p[3], p[4]])
+    ordered_columns.extend([p[1], p[2], p[3], p[4], p[5]])
 
 # 데이터프레임에 없는 컬럼이 있을 수 있으므로 교집합만 사용하거나 새로 생성
 for col in ordered_columns:
@@ -233,6 +235,8 @@ for col in ordered_columns:
         df[col] = None 
         # 금액 컬럼 기본값 0 처리
         if col == '금액 (Amount)':
+             df[col] = 0
+        elif '진행률 (%)' in col:
              df[col] = 0
 
 # 날짜 형변환
@@ -258,6 +262,8 @@ column_config = {
 }
 for col in all_date_cols:
     column_config[col] = st.column_config.DateColumn(format="YYYY-MM-DD")
+for col in all_prog_cols:
+    column_config[col] = st.column_config.NumberColumn(format="%d%%", min_value=0, max_value=100)
 
 with st.form("entry_form"):
     edited_df = st.data_editor(
@@ -345,17 +351,30 @@ try:
         progress_accum_prev_plan = 0.0
         
         # Calculate progress based on phase status
-        for phase_name, p_s, p_e, a_s, a_e in phases_info:
+        for phase_name, p_s, p_e, a_s, a_prog, a_e in phases_info:
             weight = phase_ratios.get(phase_name, 0)
             
             # --- Actual Calculation ---
             start_val = row[a_s]
             end_val = row[a_e]
             
+            prog = 0
+            try:
+                prog_val = row.get(a_prog, 0)
+                if pd.notnull(prog_val):
+                    if isinstance(prog_val, str):
+                        prog_val = float(prog_val.replace('%', '').strip())
+                    prog = float(prog_val) / 100.0
+            except:
+                prog = 0
+                
+            if pd.notnull(end_val):
+                prog = 1.0
+            
             # Current Actual
-            if pd.notnull(end_val): # Completed
-                progress_accum_curr_act += weight * 1.0
-            elif pd.notnull(start_val): # In Progress
+            if prog > 0:
+                progress_accum_curr_act += weight * prog
+            elif pd.notnull(start_val): # In Progress (Fallback if prog is 0)
                 progress_accum_curr_act += weight * 0.5
                 
             # Previous Actual
@@ -431,7 +450,7 @@ try:
         item_name = row['항목 (Item)']
         
         # 단계별 지연
-        for phase_name, p_start, p_end, a_start, a_end in phases_info:
+        for phase_name, p_start, p_end, a_start, a_prog, a_end in phases_info:
             plan_end = row[p_end]
             actual_end = row[a_end]
             
@@ -549,7 +568,7 @@ try:
             
             # 1. Collect Plan Data
             item_has_plan = False
-            for phase_name, p_start, p_end, a_start, a_end in phases:
+            for phase_name, p_start, p_end, a_start, a_prog, a_end in phases:
                 if pd.notnull(row[p_start]) and pd.notnull(row[p_end]):
                     plan_data.append(dict(
                         Item=item_name, 
@@ -570,19 +589,31 @@ try:
             
             valid_plan_dates = []
             
-            for phase_name, p_start, p_end, a_start, a_end in phases:
-                # Check Actual End first (Completion)
-                if pd.notnull(row[a_end]):
-                    if pd.notnull(row[p_end]):
-                        valid_plan_dates.append(pd.to_datetime(row[p_end]).date())
-                    # If Plan End missing, maybe fallback to Actual End? 
-                    # User requested specific "Plan Date" mapping. If missing, we can't map. 
-                    # But bars exist, so Plan usually exists.
+            for phase_name, p_start, p_end, a_start, a_prog, a_end in phases:
+                if pd.notnull(row[p_start]) and pd.notnull(row[p_end]):
+                    ps_dt = pd.to_datetime(row[p_start])
+                    pe_dt = pd.to_datetime(row[p_end])
+                    total_duration = (pe_dt - ps_dt).days
                     
-                # Check Actual Start (In Progress)
-                elif pd.notnull(row[a_start]):
-                    if pd.notnull(row[p_start]):
-                        valid_plan_dates.append(pd.to_datetime(row[p_start]).date())
+                    prog = 0
+                    try:
+                        prog_val = row.get(a_prog, 0)
+                        if pd.notnull(prog_val):
+                            if isinstance(prog_val, str):
+                                prog_val = float(prog_val.replace('%', '').strip())
+                            prog = float(prog_val) / 100.0
+                    except:
+                        prog = 0
+                        
+                    if pd.notnull(row[a_end]):
+                        prog = 1.0
+                        
+                    if prog > 0:
+                        earned_days = total_duration * prog
+                        earned_date = ps_dt + pd.Timedelta(days=earned_days)
+                        valid_plan_dates.append(earned_date.date())
+                    elif pd.notnull(row[a_start]):
+                        valid_plan_dates.append(ps_dt.date())
             
             if valid_plan_dates:
                 # Take the latest Plan Date achieved
@@ -684,7 +715,7 @@ try:
             item_name = row['항목 (Item)']
             if pd.isna(item_name) or str(item_name).strip() == "": continue
             
-            for phase_name, p_start, p_end, a_start, a_end in phases:
+            for phase_name, p_start, p_end, a_start, a_prog, a_end in phases:
                 # 1. Plan Bar (Grey)
                 if pd.notnull(row[p_start]) and pd.notnull(row[p_end]):
                     gantt_data.append(dict(
@@ -788,8 +819,8 @@ try:
         # Add date columns from phases
         date_cols = []
         for p in phases:
-             # Add Plan Start/End and Actual Start/End
-             date_cols.extend([p[1], p[2], p[3], p[4]])
+             # Add Plan Start/End, Actual Start/Progress/End
+             date_cols.extend([p[1], p[2], p[3], p[4], p[5]])
         
         # Filter only existing columns
         existing_date_cols = [c for c in date_cols if c in df.columns]
